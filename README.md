@@ -96,19 +96,19 @@ The status SHOULD be returned by a custom Webmention-Status header. This header 
 
 #### Request Still Queued
 ```http
-200 OK
+HTTP/1.1 200 OK
 Webmention-Status: 202
 ```
 
 #### Request Completed Successfully
 ```http
-200 OK
+HTTP/1.1 200 OK
 Webmention-Status: 200
 ```
 
 #### Request Failed
 ```http
-200 OK
+HTTP/1.1 200 OK
 Webmention-Status: 400
 ```
 The response body MAY include a description of the error.
