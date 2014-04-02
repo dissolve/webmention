@@ -1,4 +1,4 @@
-# Webmention 0.2 (RC1)
+# Webmention 0.2.1 
 
 Webmention is a simple way to automatically notify any URL when you link to it on your site. From the receivers perpective, it's a way to request notification when other sites link to it.
 
@@ -19,6 +19,7 @@ http://webmention.org
 ### Contributors
 * [Aaron Parecki](http://aaronparecki.com/) (aaron@parecki.com)
 * [Barnaby Walters](http://waterpigs.co.uk/)
+* [Ben Roberts](http://ben.thatmustbe.me/)
 
 
 ### License
@@ -64,20 +65,24 @@ Host: alice.host
 Content-Type: application/x-www-url-form-encoded
 
 source=http://bob.host/post-by-bob&
-target=http://alice.host/post-by-alice
+target=http://alice.host/post-by-alice&
+callback=http://bob.host/callback/321
 ```
+
+The `callback` parameter MAY be omitted if you choose to poll a returned link for asynchronous updates.
+See [Asynchronous Callback](#asynchronous-callback) for the callback protocol flow.
+
 ```http
 HTTP/1.1 202 Accepted
-
-http://alice.host/webmentions/222
+Link: <http://alice.host/webmentions/222>; rel="status"
 ```
 
 `202 Accepted` is the recommended status code to return indicating that the request SHOULD be queued and processed asynchronously to prevent __DoS attacks__. The response body SHOULD include a URL that can be used to monitor the status of the request.
+See [Asynchronous Status](#asynchronous-statue) for queue responses.
 
 If you choose to process the request and perform the [verification](#verification) step synchronously, you can respond with a `200 OK` status on success.
 
 See [Error Responses](#error-responses) for what to do when the webmention is not successful.
-
 
 
 ### Verification
@@ -85,6 +90,50 @@ See [Error Responses](#error-responses) for what to do when the webmention is no
 2. The receiver SHOULD perform a HTTP `GET` request on `source` to confirm that it actually links to `target` (note that the receiver will need to check the `Content-Type` of the entity returned by `source` to make sure it is a textual response).
 
 At this point the receiver can choose to publish information about this webmention along with any other data it picks up from `source`.
+
+### Asynchronous Status
+The status SHOULD be returned by a custom Webmention-Status header. This header SHOULD be the same status codes as would be returned if the request was just submitted.
+
+#### Request Still Queued
+```http
+200 OK
+Webmention-Status: 202
+```
+
+#### Request Completed Successfully
+```http
+200 OK
+Webmention-Status: 200
+```
+
+#### Request Failed
+```http
+200 OK
+Webmention-Status: 400
+```
+The response body MAY include a description of the error.
+
+### Asynchronous CallBack
+
+### Request Completed Successfully
+```http
+POST /callback/321 HTTP/1.1
+Host: bob.host
+Content-Type: application/x-www-url-form-encoded
+
+status=200
+```
+
+### Request Failed
+```http
+POST /callback/321 HTTP/1.1
+Host: bob.host
+Content-Type: application/x-www-url-form-encoded
+
+status=400&
+reason=...
+```
+The reason paramenter MAY be set to allow for a description of the error.
 
 
 #### Error Responses
